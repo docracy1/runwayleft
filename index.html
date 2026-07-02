@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>runwayleft — how many months of cash do you have</title>
+<meta name="description" content="Enter your cash and burn. See exactly how many months of runway you have left." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0A0A0A;
+    --card: #141414;
+    --card-line: #262626;
+    --ink: #FFFFFF;
+    --ink-soft: #8A8A8A;
+    --safe: #22C88A;
+    --safe-bg: rgba(34, 200, 138, 0.12);
+    --warn: #F2A93B;
+    --warn-bg: rgba(242, 169, 59, 0.12);
+    --danger: #F0524A;
+    --danger-bg: rgba(240, 82, 74, 0.12);
+    --accent: #FF8A3D;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 440px;
+  }
+
+  .top-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    color: var(--ink-soft);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 24px;
+    font-weight: 500;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .currency-toggle {
+    display: flex;
+    border: 1px solid var(--card-line);
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .currency-toggle button {
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .currency-toggle button.active {
+    background: var(--card-line);
+    color: var(--ink);
+  }
+
+  .field {
+    background: var(--card);
+    border: 1px solid var(--card-line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    color: var(--ink-soft);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .input-wrap {
+    display: flex;
+    align-items: center;
+  }
+
+  .input-wrap span {
+    font-size: 20px;
+    color: var(--ink-soft);
+    margin-right: 6px;
+  }
+
+  input {
+    width: 100%;
+    border: none;
+    background: none;
+    outline: none;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--ink);
+    padding: 0;
+  }
+
+  input::placeholder {
+    color: #3A3A3A;
+  }
+
+  .result {
+    margin-top: 24px;
+    padding: 28px 20px;
+    background: var(--card);
+    border: 1px solid var(--card-line);
+    border-radius: 10px;
+    text-align: center;
+  }
+
+  .status-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+  }
+
+  .months {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 68px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    transition: color 0.2s ease;
+  }
+
+  .months-label {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: 8px;
+  }
+
+  .cashout {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+
+  .cashout b {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 40px;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  .ask-btn {
+    width: 100%;
+    margin-top: 20px;
+    padding: 13px;
+    background: var(--card);
+    border: 1px solid var(--card-line);
+    border-radius: 10px;
+    color: var(--ink);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .ask-btn:hover {
+    border-color: var(--accent);
+  }
+
+  .ask-hint {
+    text-align: center;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 8px;
+  }
+
+  .connector-toggle {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--card);
+    border: 1px solid var(--card-line);
+    border-radius: 10px;
+    color: var(--ink);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+
+  .connector-toggle:hover {
+    border-color: var(--accent);
+  }
+
+  .connector {
+    display: none;
+    margin-top: 12px;
+    padding: 16px;
+    background: var(--card);
+    border: 1px solid var(--card-line);
+    border-radius: 10px;
+  }
+
+  .connector.open {
+    display: block;
+  }
+
+  .connector-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  .connector-desc {
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+
+  .connector-url-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--card-line);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+
+  .connector-url-row code {
+    flex: 1;
+    font-size: 12px;
+    color: var(--ink);
+    overflow-x: auto;
+    white-space: nowrap;
+    font-family: 'Space Grotesk', monospace;
+  }
+
+  .connector-url-row button {
+    border: 1px solid var(--card-line);
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .connector-url-row button:hover {
+    border-color: var(--accent);
+    color: var(--ink);
+  }
+
+  .connector-url-row.wrap {
+    align-items: flex-start;
+  }
+
+  .connector-url-row.wrap code {
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.5;
+    overflow-x: visible;
+  }
+
+  .connector-url-row.wrap button {
+    margin-top: 1px;
+  }
+
+  .step {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .step-num {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--card-line);
+    color: var(--ink);
+    font-size: 11px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .step-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .step-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .step-text {
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+
+  @media (max-width: 480px) {
+    .months { font-size: 52px; }
+    .top-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="top-row">
+      <div>
+        <div class="eyebrow">runway calculator</div>
+        <h1>how many months do you have left</h1>
+      </div>
+      <div class="currency-toggle">
+        <button type="button" id="btn-usd" class="active" data-currency="$">$</button>
+        <button type="button" id="btn-eur" data-currency="€">€</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="cash">cash in bank</label>
+      <div class="input-wrap">
+        <span id="sym-cash">$</span>
+        <input type="number" id="cash" inputmode="decimal" placeholder="240,000" value="240000" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="burn">monthly burn</label>
+      <div class="input-wrap">
+        <span id="sym-burn">$</span>
+        <input type="number" id="burn" inputmode="decimal" placeholder="40,000" value="40000" />
+      </div>
+    </div>
+
+    <div class="result">
+      <div class="status-badge" id="status">healthy</div>
+      <div class="months" id="months">6.0</div>
+      <div class="months-label">months left</div>
+    </div>
+
+    <div class="cashout">
+      cash out around <b id="date">—</b>
+    </div>
+
+    <button type="button" id="ask-claude-btn" class="ask-btn">
+      <span id="ask-btn-label">Ask your Claude what to cut</span>
+    </button>
+    <div class="ask-hint" id="ask-hint">Copies a prompt with your numbers, then opens Claude — paste it in.</div>
+
+    <button type="button" class="connector-toggle" id="connector-toggle">Connect this to your Claude</button>
+
+    <div class="connector" id="connector-panel">
+      <div class="connector-desc">Do this once and your Claude can calculate runway, breakeven, and burn multiple anytime — no copy-pasting into this page.</div>
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Copy this URL</div>
+          <div class="connector-url-row">
+            <code id="connector-url">…</code>
+            <button type="button" id="copy-url-btn" aria-label="Copy connector URL">copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Add it as a custom connector</div>
+          <div class="step-text">In Claude, go to <b>Settings → Connectors → Add custom connector</b>, paste the URL, and connect. No login or API key needed.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Say "runwayleft" in your question</div>
+          <div class="step-text">Claude sometimes does the math itself instead of calling the tool. Naming it makes sure it uses the live calculator, not guesswork.</div>
+          <div class="connector-url-row wrap">
+            <code id="example-prompt">use runwayleft to check my burn multiple: $100k net new ARR, $180k net burn</code>
+            <button type="button" id="copy-prompt-btn" aria-label="Copy example prompt">copy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      built by founders, for founders
+    </footer>
+  </div>
+
+<script>
+  const cashInput = document.getElementById('cash');
+  const burnInput = document.getElementById('burn');
+  const monthsEl = document.getElementById('months');
+  const dateEl = document.getElementById('date');
+  const statusEl = document.getElementById('status');
+  const symCash = document.getElementById('sym-cash');
+  const symBurn = document.getElementById('sym-burn');
+  const btnUsd = document.getElementById('btn-usd');
+  const btnEur = document.getElementById('btn-eur');
+
+  let currency = '$';
+
+  function setCurrency(sym) {
+    currency = sym;
+    symCash.textContent = sym;
+    symBurn.textContent = sym;
+    btnUsd.classList.toggle('active', sym === '$');
+    btnEur.classList.toggle('active', sym === '€');
+  }
+
+  btnUsd.addEventListener('click', () => setCurrency('$'));
+  btnEur.addEventListener('click', () => setCurrency('€'));
+
+  function setStatus(kind, label) {
+    statusEl.textContent = label;
+    statusEl.style.color = `var(--${kind})`;
+    statusEl.style.background = `var(--${kind}-bg)`;
+  }
+
+  function calc() {
+    const cash = parseFloat(cashInput.value) || 0;
+    const burn = parseFloat(burnInput.value) || 0;
+
+    if (burn <= 0) {
+      monthsEl.textContent = cash > 0 ? '∞' : '0.0';
+      monthsEl.style.color = 'var(--ink)';
+      dateEl.textContent = cash > 0 ? 'not burning cash' : '—';
+      setStatus('safe', 'healthy');
+      return;
+    }
+
+    const months = cash / burn;
+
+    if (months <= 0) {
+      monthsEl.textContent = '0.0';
+      monthsEl.style.color = 'var(--danger)';
+      dateEl.textContent = 'already out';
+      setStatus('danger', 'out of cash');
+      return;
+    }
+
+    monthsEl.textContent = months.toFixed(1);
+
+    if (months >= 12) {
+      monthsEl.style.color = 'var(--safe)';
+      setStatus('safe', 'healthy');
+    } else if (months >= 6) {
+      monthsEl.style.color = 'var(--warn)';
+      setStatus('warn', 'watch it');
+    } else {
+      monthsEl.style.color = 'var(--danger)';
+      setStatus('danger', 'critical');
+    }
+
+    const d = new Date();
+    d.setDate(d.getDate() + Math.round(months * 30.44));
+    dateEl.textContent = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
+
+  cashInput.addEventListener('input', calc);
+  burnInput.addEventListener('input', calc);
+  calc();
+
+  const askBtn = document.getElementById('ask-claude-btn');
+  const askBtnLabel = document.getElementById('ask-btn-label');
+  const askHint = document.getElementById('ask-hint');
+
+  askBtn.addEventListener('click', async () => {
+    const cash = parseFloat(cashInput.value) || 0;
+    const burn = parseFloat(burnInput.value) || 0;
+    const months = burn > 0 ? cash / burn : Infinity;
+    const monthsText = months === Infinity ? 'infinite' : months.toFixed(1);
+
+    const prompt = `I have ${currency}${cash.toLocaleString()} in the bank and burn ${currency}${burn.toLocaleString()}/month. That's ${monthsText} months of runway. Give me 3 short, concrete, numbers-based moves to extend my runway - each with its dollar impact and the new runway it creates. Keep it under 100 words, no preamble.`;
+
+    try {
+      await navigator.clipboard.writeText(prompt);
+      askBtnLabel.textContent = 'Copied — opening Claude…';
+      askHint.textContent = 'Paste it into the chat (Cmd/Ctrl+V).';
+    } catch (err) {
+      askBtnLabel.textContent = 'Opening Claude…';
+      askHint.textContent = 'Copy failed — paste this manually: ' + prompt;
+    }
+
+    window.open('https://claude.ai/new', '_blank');
+
+    setTimeout(() => {
+      askBtnLabel.textContent = 'Ask your Claude what to cut';
+    }, 3000);
+  });
+
+  const connectorUrlEl = document.getElementById('connector-url');
+  const copyUrlBtn = document.getElementById('copy-url-btn');
+  const connectorUrl = window.location.origin + '/.netlify/functions/mcp';
+  connectorUrlEl.textContent = connectorUrl;
+
+  const connectorToggle = document.getElementById('connector-toggle');
+  const connectorPanel = document.getElementById('connector-panel');
+
+  connectorToggle.addEventListener('click', () => {
+    const isOpen = connectorPanel.classList.toggle('open');
+    connectorToggle.textContent = isOpen ? 'Hide Claude connector' : 'Connect this to your Claude';
+  });
+
+  copyUrlBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(connectorUrl);
+      copyUrlBtn.textContent = 'copied';
+      setTimeout(() => { copyUrlBtn.textContent = 'copy'; }, 2000);
+    } catch (err) {
+      copyUrlBtn.textContent = 'select & copy';
+    }
+  });
+
+  const copyPromptBtn = document.getElementById('copy-prompt-btn');
+  const examplePrompt = document.getElementById('example-prompt');
+
+  copyPromptBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(examplePrompt.textContent);
+      copyPromptBtn.textContent = 'copied';
+      setTimeout(() => { copyPromptBtn.textContent = 'copy'; }, 2000);
+    } catch (err) {
+      copyPromptBtn.textContent = 'select & copy';
+    }
+  });
+</script>
+
+</body>
+</html>
