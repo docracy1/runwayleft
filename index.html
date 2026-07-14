@@ -191,6 +191,99 @@
     color: var(--ink-soft);
   }
 
+  footer a {
+    color: var(--ink-soft);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  footer a:hover {
+    color: var(--ink);
+  }
+
+  .contact {
+    margin-top: 12px;
+    padding: 16px;
+    background: var(--card);
+    border: 1px solid var(--card-line);
+    border-radius: 10px;
+  }
+
+  .contact-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  .contact-desc {
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+
+  .contact input[type="email"],
+  .contact textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--card-line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    margin-bottom: 8px;
+    resize: vertical;
+  }
+
+  .contact textarea {
+    min-height: 72px;
+  }
+
+  .contact input[type="email"]:focus,
+  .contact textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .contact button {
+    width: 100%;
+    padding: 11px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #0A0A0A;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .contact button:hover {
+    opacity: 0.9;
+  }
+
+  .contact button:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .contact-status {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+
+  .contact-status.success {
+    color: var(--safe);
+  }
+
+  .contact-status.error {
+    color: var(--danger);
+  }
+
   .ask-btn {
     width: 100%;
     margin-top: 20px;
@@ -404,10 +497,10 @@
     </button>
     <div class="ask-hint" id="ask-hint">Copies a prompt with your numbers, then opens Claude — paste it in.</div>
 
-    <button type="button" class="connector-toggle" id="connector-toggle">Connect this to your Claude</button>
+    <button type="button" class="connector-toggle" id="connector-toggle">Connect this to your AI assistant</button>
 
     <div class="connector" id="connector-panel">
-      <div class="connector-desc">Do this once and your Claude can calculate runway, breakeven, and burn multiple anytime — no copy-pasting into this page.</div>
+      <div class="connector-desc">Works as an MCP connector in Claude, ChatGPT, Grok, and Perplexity. Do this once and your assistant can calculate runway, breakeven, and burn multiple anytime — no copy-pasting into this page.</div>
 
       <div class="step">
         <div class="step-num">1</div>
@@ -424,7 +517,7 @@
         <div class="step-num">2</div>
         <div class="step-body">
           <div class="step-title">Add it as a custom connector</div>
-          <div class="step-text">In Claude, go to <b>Settings → Connectors → Add custom connector</b>, paste the URL, and connect. No login or API key needed.</div>
+          <div class="step-text">In Claude: <b>Settings → Connectors → Add custom connector</b>. In ChatGPT: <b>Settings → Connectors → Add</b>. In Grok or Perplexity, look for "Connectors" or "Tools" in settings. Paste the URL — no login or API key needed.</div>
         </div>
       </div>
 
@@ -432,7 +525,7 @@
         <div class="step-num">3</div>
         <div class="step-body">
           <div class="step-title">Say "runwayleft" in your question</div>
-          <div class="step-text">Claude sometimes does the math itself instead of calling the tool. Naming it makes sure it uses the live calculator, not guesswork.</div>
+          <div class="step-text">Some assistants do the math themselves instead of calling the tool. Naming it makes sure it uses the live calculator, not guesswork.</div>
           <div class="connector-url-row wrap">
             <code id="example-prompt">use runwayleft to check my burn multiple: $100k net new ARR, $180k net burn</code>
             <button type="button" id="copy-prompt-btn" aria-label="Copy example prompt">copy</button>
@@ -441,11 +534,98 @@
       </div>
     </div>
 
+    <div class="contact">
+      <div class="contact-label">Questions, bugs, feedback?</div>
+      <div class="contact-desc">Send it straight to me — no account needed.</div>
+      <form id="contact-form">
+        <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off">
+        <input type="email" name="email" placeholder="you@email.com" required>
+        <textarea name="message" placeholder="What's on your mind" required></textarea>
+        <button type="submit" id="contact-submit">Send</button>
+      </form>
+      <div class="contact-status" id="contact-status"></div>
+    </div>
+
     <footer>
       built by founders, for founders
     </footer>
   </div>
 
+<script>
+  (function () {
+    var form = document.getElementById('contact-form');
+    var status = document.getElementById('contact-status');
+    var submitBtn = document.getElementById('contact-submit');
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending…';
+      status.textContent = '';
+      status.className = 'contact-status';
+
+      var formData = new FormData(form);
+      formData.append('access_key', 'e7af44eb-85cc-4cc3-bcd2-b8258932098d');
+      formData.append('subject', 'New message from runwayleft');
+      formData.append('from_name', 'runwayleft contact form');
+
+      try {
+        var res = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { Accept: 'application/json' },
+          body: formData,
+        });
+        var data = await res.json();
+        if (data.success) {
+          status.textContent = 'Sent — thanks, I\'ll get back to you.';
+          status.className = 'contact-status success';
+          form.reset();
+        } else {
+          throw new Error(data.message || 'Send failed');
+        }
+      } catch (err) {
+        status.textContent = 'Something went wrong — try again in a bit.';
+        status.className = 'contact-status error';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send';
+      }
+    });
+  })();
+</script>
+<script>
+  (function () {
+    var vid = localStorage.getItem('vid');
+    if (!vid) {
+      vid = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+      localStorage.setItem('vid', vid);
+    }
+
+    function send(payload) {
+      var url = '/.netlify/functions/track';
+      var body = JSON.stringify(payload);
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
+      } else {
+        fetch(url, { method: 'POST', body: body, keepalive: true }).catch(function () {});
+      }
+    }
+
+    send({ visitor_id: vid });
+
+    var start = Date.now();
+    var sent = false;
+    function sendDuration() {
+      if (sent) return;
+      sent = true;
+      send({ type: 'duration', visitor_id: vid, ms: Date.now() - start });
+    }
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') sendDuration();
+    });
+    window.addEventListener('pagehide', sendDuration);
+  })();
+</script>
 <script>
   const cashInput = document.getElementById('cash');
   const burnInput = document.getElementById('burn');
@@ -558,7 +738,7 @@
 
   connectorToggle.addEventListener('click', () => {
     const isOpen = connectorPanel.classList.toggle('open');
-    connectorToggle.textContent = isOpen ? 'Hide Claude connector' : 'Connect this to your Claude';
+    connectorToggle.textContent = isOpen ? 'Hide connector' : 'Connect this to your AI assistant';
   });
 
   copyUrlBtn.addEventListener('click', async () => {

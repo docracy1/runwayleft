@@ -1,11 +1,44 @@
 // netlify/functions/mcp.js
 //
 // A stateless, no-auth remote MCP server. It exposes CFO calculator tools
-// (runway, breakeven, burn multiple) that ANY Claude user can call once they
-// add this URL as a custom connector — no API key, no LLM calls happen here,
-// so this costs you nothing to run beyond Netlify's free function tier.
+// (runway, breakeven, burn multiple) that any MCP-compatible AI assistant —
+// Claude, ChatGPT, Grok, Perplexity, etc. — can call once added as a
+// connector. No API key, no LLM calls happen here, so this costs you nothing
+// to run beyond Netlify's free function tier.
 //
 // Connector URL to give users: https://<your-site>/.netlify/functions/mcp
+
+const { getStore } = require('@netlify/blobs');
+
+// Manual deploys (drag-and-drop) don't get Netlify Blobs' automatic
+// environment wiring, so we fall back to explicit siteID/token if the
+// BLOBS_SITE_ID and BLOBS_TOKEN environment variables are set.
+function getStatsStore() {
+  const opts = { name: 'stats' };
+  if (process.env.BLOBS_SITE_ID && process.env.BLOBS_TOKEN) {
+    opts.siteID = process.env.BLOBS_SITE_ID;
+    opts.token = process.env.BLOBS_TOKEN;
+  }
+  return getStore(opts);
+}
+
+// Fire-and-forget call tracking via Netlify Blobs (free, zero extra infra).
+// Never throws — a stats failure must never break an actual tool call.
+async function trackCall(toolName) {
+  try {
+    const store = getStatsStore();
+    const day = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const keys = ['total', `tool:${toolName}`, `day:${day}`, `day:${day}:${toolName}`];
+    await Promise.all(
+      keys.map(async (k) => {
+        const cur = await store.get(k, { type: 'text' });
+        await store.set(k, String((parseInt(cur, 10) || 0) + 1));
+      })
+    );
+  } catch (e) {
+    console.error('trackCall failed:', e.message);
+  }
+}
 
 const TOOLS = [
   {
@@ -107,6 +140,27 @@ exports.handler = async (event) => {
     return { statusCode: 204, headers, body: '' };
   }
 
+  // Some MCP clients, connector-setup flows, and directory scanners probe
+  // the URL with GET/HEAD before ever sending a JSON-RPC POST. Answering
+  // 405 for that is technically correct but shows up as a bogus "error" in
+  // hosting stats. Answer 200 instead — the actual protocol still only
+  // responds to POST.
+  if (event.httpMethod === 'GET' || event.httpMethod === 'HEAD') {
+    return {
+      statusCode: 200,
+      headers,
+      body:
+        event.httpMethod === 'HEAD'
+          ? ''
+          : JSON.stringify({
+              name: 'runwayleft-cfo-tools',
+              protocol: 'mcp',
+              transport: 'streamable-http',
+              note: 'This endpoint speaks MCP over POST (JSON-RPC 2.0). Add it as a custom connector in Claude, ChatGPT, Grok, or Perplexity.',
+            }),
+    };
+  }
+
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
@@ -154,6 +208,7 @@ exports.handler = async (event) => {
           return respondError(-32602, `Unknown tool: ${toolName}`);
         }
         const text = fn(args);
+        await trackCall(toolName);
         return respond({ content: [{ type: 'text', text }], isError: false });
       }
 
